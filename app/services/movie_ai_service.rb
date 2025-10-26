@@ -1,118 +1,118 @@
 require "stringio"
+require "net/http"
+require "uri"
+require "httparty"
 
 class MovieAiService
-  include HTTParty
-  base_uri "https://api.openai.com/v1"
+  GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:generateContent"
 
   def initialize
-    @api_key = ENV["OPENAI_API_KEY"] || Rails.application.credentials.openai_api_key
+    @api_key = "AIzaSyAwkv0fhB9LCo1GyzVngQE2rJumIxxDNjE" #
+    @tmdb_api_key = "e7a045b11f740d5c9fde1d599c4a660e"
   end
 
   def fetch_movie_data(title)
-    return failure_response("API key não configurada") unless @api_key
+    return failure_response("API key da Gemini não configurada") unless @api_key.present?
+
+    prompt = <<~PROMPT
+      Você é um especialista em cinema. Responda **exclusivamente** com um JSON válido (sem comentários ou texto extra).
+      O formato exato deve ser:
+      {
+        "title": "Título do filme",
+        "synopsis": "Sinopse detalhada e envolvente",
+        "year": 2010,
+        "duration": 148,
+        "director": "Nome do diretor",
+        "categories": ["Ação", "Ficção científica"],
+        "tags": ["mind-bending", "sci-fi", "thriller"]
+      }
+
+      Filme: #{title}
+    PROMPT
+
+    uri = URI("#{GEMINI_BASE_URL}?key=#{@api_key}")
+    headers = { "Content-Type" => "application/json" }
+    body = {
+      contents: [
+        {
+          parts: [
+            { text: prompt }
+          ]
+        }
+      ]
+    }.to_json
 
     begin
-      response = self.class.post("/chat/completions",
-        headers: {
-          "Authorization" => "Bearer #{@api_key}",
-          "Content-Type" => "application/json"
-        },
-        body: {
-          model: "gpt-3.5-turbo",
-          messages: [
-            {
-              role: "system",
-              content: "Você é um especialista em cinema. Retorne APENAS um JSON válido com as informações do filme solicitado. Formato: {\"title\":\"Título\",\"synopsis\":\"Sinopse detalhada\",\"year\":ano,\"duration\":minutos,\"director\":\"Diretor\",\"categories\":[\"Categoria1\",\"Categoria2\"],\"tags\":[\"tag1\",\"tag2\"],\"poster_url\":\"URL_da_imagem_do_poster\"}"
-            },
-            {
-              role: "user",
-              content: "Busque informações completas sobre o filme: #{title}"
-            }
-          ],
-          max_tokens: 500,
-          temperature: 0.3
-        }.to_json
-      )
+      http = Net::HTTP.new(uri.host, uri.port)
+      http.use_ssl = true
+      request = Net::HTTP::Post.new(uri.request_uri, headers)
+      request.body = body
+      response = http.request(request)
 
-      if response.success?
-        content = response.dig("choices", 0, "message", "content")
-        movie_data = JSON.parse(content)
+      if response.is_a?(Net::HTTPSuccess)
+        json = JSON.parse(response.body)
+        content = json.dig("candidates", 0, "content", "parts", 0, "text")
+        cleaned_json = content[/\{.*\}/m]
+        movie_data = JSON.parse(cleaned_json) rescue nil
+
+        return failure_response("A IA não retornou um JSON válido") unless movie_data
+
+        poster_url = fetch_poster_from_tmdb(title)
+        movie_data["poster_url"] = poster_url if poster_url.present?
 
         success_response(movie_data)
       else
-        failure_response("Erro na API: #{response['error']['message']}")
+        failure_response("Erro na API Gemini: #{response.body}")
       end
-
     rescue JSON::ParserError
-      failure_response("Erro ao interpretar resposta da IA")
+      failure_response("Erro ao interpretar resposta da IA Gemini")
     rescue => e
       failure_response("Erro de conexão: #{e.message}")
     end
   end
 
-  # Fallback usando OMDB API (gratuita)
-  def fetch_movie_data_omdb(title)
-    omdb_api_key = ENV["OMDB_API_KEY"] || Rails.application.credentials.omdb_api_key
-    return failure_response("OMDB API key não configurada") unless omdb_api_key
-
-    begin
-      response = HTTParty.get("http://www.omdbapi.com/", {
-        query: {
-          t: title,
-          apikey: omdb_api_key,
-          plot: "full"
-        }
-      })
-
-      if response.success? && response["Response"] == "True"
-        movie_data = {
-          title: response["Title"],
-          synopsis: response["Plot"],
-          year: response["Year"].to_i,
-          duration: parse_runtime(response["Runtime"]),
-          director: response["Director"],
-          categories: parse_genre(response["Genre"]),
-          tags: generate_tags(response),
-          poster_url: response["Poster"]
-        }
-
-        success_response(movie_data)
-      else
-        failure_response("Filme não encontrado na base de dados")
-      end
-
-    rescue => e
-      failure_response("Erro de conexão com OMDB: #{e.message}")
-    end
-  end
-
-  # Baixa e anexa o pôster do filme
   def download_and_attach_poster(movie, poster_url)
-    return false unless poster_url.present? && poster_url != "N/A"
+    return false unless poster_url.present? && poster_url.start_with?("http")
 
     begin
-      response = HTTParty.get(poster_url)
+      response = HTTParty.get(poster_url, follow_redirects: true)
+      return false unless response.success?
 
-      if response.success?
-        filename = "#{movie.title.parameterize}_poster.jpg"
+      content_type = response.headers["content-type"] || "image/jpeg"
+      filename = "#{movie.title.parameterize}_poster.jpg"
 
-        movie.poster.attach(
-          io: StringIO.new(response.body),
-          filename: filename,
-          content_type: "image/jpeg"
-        )
-
-        true
-      else
-        false
-      end
+      movie.poster.attach(
+        io: StringIO.new(response.body),
+        filename: filename,
+        content_type: content_type
+      )
+      true
     rescue => e
-      Rails.logger.error "Erro ao baixar pôster: #{e.message}"
+      Rails.logger.error("Erro ao baixar pôster: #{e.message}")
       false
     end
   end
 
   private
+
+  def fetch_poster_from_tmdb(title)
+    return nil unless @tmdb_api_key.present?
+
+    encoded_title = URI.encode_www_form_component(title)
+    search_url = "https://api.themoviedb.org/3/search/movie?api_key=#{@tmdb_api_key}&query=#{encoded_title}"
+
+    response = HTTParty.get(search_url)
+    return nil unless response.success?
+
+    result = response.parsed_response["results"]&.first
+    return nil unless result && result["poster_path"]
+
+    "https://image.tmdb.org/t/p/w500#{result['poster_path']}"
+  rescue => e
+    Rails.logger.error("Erro ao buscar poster no TMDb: #{e.message}")
+    nil
+  end
+
 
   def success_response(data)
     { success: true, data: data }
@@ -120,24 +120,5 @@ class MovieAiService
 
   def failure_response(message)
     { success: false, error: message }
-  end
-
-  def parse_runtime(runtime)
-    return 120 unless runtime
-    runtime.scan(/\d+/).first.to_i || 120
-  end
-
-  def parse_genre(genre)
-    return [ "Drama" ] unless genre
-    genre.split(", ").map(&:strip)
-  end
-
-  def generate_tags(data)
-    tags = []
-    tags << "oscar" if data["Awards"]&.include?("Oscar")
-    tags << "imdb-top" if data["imdbRating"].to_f > 8.0
-    tags << "recent" if data["Year"].to_i > 2020
-    tags << "classic" if data["Year"].to_i < 1980
-    tags.presence || [ "filme" ]
   end
 end
