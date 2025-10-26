@@ -1,0 +1,82 @@
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+      <div class="container">
+        <%= link_to "🎬 Netmovies", root_path, class: "navbar-brand" %>
+        
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        
+        <div class="collapse navbar-collapse" id="navbarNav">
+          <ul class="navbar-nav me-auto">
+            <li class="nav-item">
+              <%= link_to t('nav.movies'), movies_path, class: "nav-link" %>
+            </li>
+              <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" href="#" id="categoriesDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                  <%= t('nav.categories') %>
+                </a>
+                <ul class="dropdown-menu" aria-labelledby="categoriesDropdown">
+                  <% Category.ordered_by_name.each do |category| %>
+                    <li>
+                      <%= link_to category.name, category_path(category), class: "dropdown-item" %>
+                    </li>
+                  <% end %>
+                </ul>
+              </li>
+            <% if user_signed_in? %>
+              <li class="nav-item">
+                <%= link_to t('movie_imports.title'), movie_imports_path, class: "nav-link" %>
+              </li>
+            <% end %>
+          </ul>
+          
+          <ul class="navbar-nav">
+
+            <% if user_signed_in? %>
+              <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                  <i class="fas fa-user"></i> <%= current_user.display_name %>
+                </a>
+                <ul class="dropdown-menu">
+                  <li><%= link_to t('nav.profile'), edit_user_registration_path, class: "dropdown-item" %></li>
+                  <li><hr class="dropdown-divider"></li>
+                  <li><%= link_to t('nav.logout'), destroy_user_session_path, method: :delete, class: "dropdown-item" %></li>
+                </ul>
+              </li>
+            <% else %>
+              <li class="nav-item">
+                <%= link_to t('nav.login'), new_user_session_path, class: "nav-link" %>
+              </li>
+              <li class="nav-item">
+                <%= link_to t('nav.register'), new_user_registration_path, class: "nav-link" %>
+              </li>
+            <% end %>
+          </ul>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Flash Messages -->
+    <% if notice %>
+      <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <%= notice %>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
+    <% end %>
+    
+    <% if alert %>
+      <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <%= alert %>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
+    <% end %>
+
+    <!-- Profile Completion Notification -->
+    <% if user_signed_in? && current_user.needs_profile_completion? %>
+      <div class="alert alert-info alert-dismissible fade show" role="alert">
+        <i class="fas fa-info-circle"></i>
+        <strong><%= t('profile.completion_notice') %></strong>
+        <%= link_to t('profile.complete_profile'), edit_user_registration_path, class: "btn btn-outline-info btn-sm ms-2" %>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
+    <% end %>

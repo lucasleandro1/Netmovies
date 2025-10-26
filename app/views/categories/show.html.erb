@@ -1,0 +1,32 @@
+<% content_for :title, "#{t('categories.category')} - #{@category.name}" %>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h1><i class="fas fa-tag"></i> <%= @category.name %></h1>
+  <%= link_to t('categories.back'), categories_path, class: "btn btn-outline-secondary" %>
+</div>
+
+<p class="lead text-muted mb-4">
+  <%= t('categories.movies_in_category', count: @movies.total_count) %>
+</p>
+
+<% if @movies.any? %>
+  <div class="row">
+    <% @movies.each do |movie| %>
+      <div class="col-md-4 col-lg-3">
+        <%= render 'movies/movie_card', movie: movie %>
+      </div>
+    <% end %>
+  </div>
+
+  <!-- Pagination -->
+  <div class="d-flex justify-content-center">
+    <%= paginate @movies%>
+  </div>
+<% else %>
+  <div class="text-center py-5">
+    <i class="fas fa-film fa-3x text-muted mb-3"></i>
+    <h3 class="text-muted"><%= t('movies.no_movies_in_category') %></h3>
+    <p class="text-muted"><%= t('movies.no_movies_in_category_description') %></p>
+    <%= link_to t('movies.browse_all'), movies_path, class: "btn btn-primary" %>
+  </div>
+<% end %>

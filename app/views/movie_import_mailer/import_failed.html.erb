@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <style>
+      body { font-family: Arial, sans-serif; }
+      .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+      .header { background-color: #dc3545; color: white; padding: 20px; text-align: center; }
+      .content { padding: 20px; background-color: #f8f9fa; }
+      .error { color: #dc3545; }
+      .stats { background-color: white; padding: 15px; border-radius: 5px; margin: 10px 0; }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1>🎬 Netmovies</h1>
+        <h2>Falha na Importação</h2>
+      </div>
+      
+      <div class="content">
+        <p>Olá, <strong><%= @user.name %></strong>!</p>
+        
+        <p class="error">❌ Ocorreu um erro durante a importação de filmes.</p>
+        
+        <div class="stats">
+          <h3>Detalhes do Erro:</h3>
+          <ul>
+            <li><strong>Arquivo:</strong> <%= @movie_import.file_name %></li>
+            <li><strong>Status:</strong> Falhou</li>
+            <li><strong>Erro:</strong> <%= @movie_import.error_messages %></li>
+            <li><strong>Tentativa em:</strong> <%= l(@movie_import.completed_at, format: :long) %></li>
+          </ul>
+        </div>
+        
+        <div style="background-color: #f8d7da; padding: 15px; border-radius: 5px; margin: 10px 0;">
+          <h4>🔧 Dicas para resolver:</h4>
+          <ul>
+            <li>Verifique se o arquivo CSV está no formato correto</li>
+            <li>Certifique-se de que todas as colunas obrigatórias estão presentes</li>
+            <li>Verifique se não há caracteres especiais nos dados</li>
+          </ul>
+        </div>
+        
+        <p>
+          <a href="<%= new_movie_import_url %>" style="background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
+            Tentar Nova Importação
+          </a>
+        </p>
+        
+        <p>
+          Se o problema persistir, entre em contato com nosso suporte.<br>
+          <em>Equipe Netmovies</em>
+        </p>
+      </div>
+    </div>
+  </body>
+</html>

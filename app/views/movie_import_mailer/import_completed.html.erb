@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <style>
+      body { font-family: Arial, sans-serif; }
+      .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+      .header { background-color: #007bff; color: white; padding: 20px; text-align: center; }
+      .content { padding: 20px; background-color: #f8f9fa; }
+      .success { color: #28a745; }
+      .stats { background-color: white; padding: 15px; border-radius: 5px; margin: 10px 0; }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1>🎬 Netmovies</h1>
+        <h2>Importação Concluída</h2>
+      </div>
+      
+      <div class="content">
+        <p>Olá, <strong><%= @user.name %></strong>!</p>
+        
+        <p class="success">✅ Sua importação de filmes foi concluída com sucesso!</p>
+        
+        <div class="stats">
+          <h3>Resumo da Importação:</h3>
+          <ul>
+            <li><strong>Arquivo:</strong> <%= @movie_import.file_name %></li>
+            <li><strong>Filmes processados:</strong> <%= @movie_import.processed_count %></li>
+            <li><strong>Erros:</strong> <%= @movie_import.error_count %></li>
+            <li><strong>Concluída em:</strong> <%= l(@movie_import.completed_at, format: :long) %></li>
+          </ul>
+        </div>
+        
+        <% if @movie_import.error_count > 0 %>
+          <div style="background-color: #fff3cd; padding: 15px; border-radius: 5px; margin: 10px 0;">
+            <h4>⚠️ Avisos:</h4>
+            <p>Alguns registros apresentaram erros durante a importação. Verifique os detalhes na aplicação.</p>
+          </div>
+        <% end %>
+        
+        <p>
+          <a href="<%= movie_import_url(@movie_import) %>" style="background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
+            Ver Detalhes da Importação
+          </a>
+        </p>
+        
+        <p>
+          Obrigado por usar o Netmovies!<br>
+          <em>Equipe Netmovies</em>
+        </p>
+      </div>
+    </div>
+  </body>
+</html>

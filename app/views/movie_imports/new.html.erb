@@ -1,0 +1,61 @@
+<% content_for :title, t('movie_imports.new') %>
+
+<div class="row justify-content-center">
+  <div class="col-md-8">
+    <div class="card">
+      <div class="card-header">
+        <h3><i class="fas fa-upload"></i> <%= t('movie_imports.new') %></h3>
+      </div>
+      <div class="card-body">
+        <%= form_with model: @movie_import, local: true, multipart: true do |f| %>
+          <% if @movie_import.errors.any? %>
+            <div class="alert alert-danger">
+              <h4><%= t('movie_imports.form_errors') %></h4>
+              <ul class="mb-0">
+                <% @movie_import.errors.full_messages.each do |message| %>
+                  <li><%= message %></li>
+                <% end %>
+              </ul>
+            </div>
+          <% end %>
+
+          <div class="mb-3">
+            <%= f.label :file_name, t('movie_imports.description'), class: "form-label" %>
+            <%= f.text_field :file_name, class: "form-control", 
+                            placeholder: t('movie_imports.description_placeholder') %>
+            <small class="form-text text-muted"><%= t('movie_imports.description_help') %></small>
+          </div>
+
+          <div class="mb-3">
+            <%= f.label :csv_file, t('movie_imports.csv_file'), class: "form-label" %>
+            <%= f.file_field :csv_file, class: "form-control", accept: ".csv" %>
+            <small class="form-text text-muted"><%= t('movie_imports.csv_file_help') %></small>
+          </div>
+
+          <!-- CSV Format Example -->
+          <div class="card bg-light mb-3">
+            <div class="card-header">
+              <h6><i class="fas fa-info-circle"></i> <%= t('movie_imports.csv_format') %></h6>
+            </div>
+            <div class="card-body">
+              <p class="mb-2"><%= t('movie_imports.csv_format_description') %></p>
+              <code class="d-block bg-white p-2 rounded">
+                title,synopsis,year,duration,director,categories,tags<br>
+                Matrix,"Um programador descobre a realidade...",1999,136,"Lana Wachowski","Ação|Ficção Científica","sci-fi|cult"<br>
+                Pulp Fiction,"Histórias entrelaçadas de crime...",1994,154,"Quentin Tarantino","Crime|Drama","cult|indie"
+              </code>
+              <small class="text-muted">
+                <%= t('movie_imports.csv_notes') %>
+              </small>
+            </div>
+          </div>
+
+          <div class="d-flex justify-content-between">
+            <%= f.submit t('movie_imports.upload'), class: "btn btn-primary" %>
+            <%= link_to t('movie_imports.cancel'), movie_imports_path, class: "btn btn-secondary" %>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>
