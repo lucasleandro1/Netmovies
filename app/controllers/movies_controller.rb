@@ -8,8 +8,6 @@ class MoviesController < ApplicationController
                    .ordered_by_newest
                    .page(params[:page])
                    .per(8)
-
-    # Apply filters if present
     @movies = apply_filters(@movies)
 
     @categories = Category.ordered_by_name
@@ -31,6 +29,12 @@ class MoviesController < ApplicationController
     @movie = current_user.movies.build(movie_params)
 
     if @movie.save
+      if params[:movie][:poster].blank? && params[:movie][:ai_poster_url].present?
+        ai_service = MovieAiService.new
+        poster_url = params[:movie][:ai_poster_url]
+        poster_attached = ai_service.download_and_attach_poster(@movie, poster_url)
+        @movie.reload if poster_attached
+      end
       redirect_to @movie, notice: t("movies.created_successfully")
     else
       @categories = Category.ordered_by_name
@@ -83,75 +87,72 @@ class MoviesController < ApplicationController
       return
     end
 
-    ai_service = MovieAiService.new
-
-    # Try OpenAI first, fallback to OMDB
-    result = ai_service.fetch_movie_data(title)
-    result = ai_service.fetch_movie_data_omdb(title) unless result[:success]
-
-    render json: result
+  ai_service = MovieAiService.new
+  result = ai_service.fetch_movie_data(title)
+  render json: result
   end
 
   def create_from_ai
     title = params[:title]
 
-    if title.blank?
-      render json: { success: false, error: "Título é obrigatório" }
-      return
-    end
+    return render json: { success: false, error: "Título é obrigatório" } if title.blank?
 
     ai_service = MovieAiService.new
-
-    # Try OpenAI first, fallback to OMDB
     result = ai_service.fetch_movie_data(title)
-    result = ai_service.fetch_movie_data_omdb(title) unless result[:success]
 
-    if result[:success]
-      movie_data = result[:data]
+    unless result[:success]
+      return render json: result
+    end
 
-      # Create movie
-      movie = current_user.movies.build(
-        title: movie_data[:title],
-        synopsis: movie_data[:synopsis],
-        year: movie_data[:year],
-        duration: movie_data[:duration],
-        director: movie_data[:director]
-      )
+    movie_data = result[:data]
 
-      if movie.save
-        # Associate categories
-        if movie_data[:categories].present?
-          movie_data[:categories].each do |category_name|
-            category = Category.find_or_create_by(name: category_name)
-            movie.categories << category unless movie.categories.include?(category)
-          end
-        end
+    movie = current_user.movies.build(
+      title: movie_data["title"],
+      synopsis: movie_data["synopsis"],
+      year: movie_data["year"],
+      duration: movie_data["duration"],
+      director: movie_data["director"]
+    )
 
-        # Associate tags
-        if movie_data[:tags].present?
-          movie_data[:tags].each do |tag_name|
-            tag = Tag.find_or_create_by(name: tag_name)
-            movie.tags << tag unless movie.tags.include?(tag)
-          end
-        end
-
-        # Download and attach poster
-        poster_attached = false
-        if movie_data[:poster_url].present?
-          poster_attached = ai_service.download_and_attach_poster(movie, movie_data[:poster_url])
-        end
-
-        render json: {
-          success: true,
-          movie_id: movie.id,
-          poster_attached: poster_attached,
-          message: "Filme criado com sucesso#{poster_attached ? ' e pôster anexado' : ''}!"
-        }
-      else
-        render json: { success: false, error: movie.errors.full_messages.join(", ") }
+    if movie.save
+      Array(movie_data["categories"]).each do |category_name|
+        category = Category.find_or_create_by(name: category_name)
+        movie.categories << category unless movie.categories.include?(category)
       end
+
+      Array(movie_data["tags"]).each do |tag_name|
+        tag = Tag.find_or_create_by(name: tag_name)
+        movie.tags << tag unless movie.tags.include?(tag)
+      end
+
+      poster_url = movie_data["poster_url"]
+
+      if poster_url.blank? || poster_url.include?("not found")
+        poster_url = ai_service.fetch_poster_from_tmdb(movie.title)
+      end
+
+      poster_attached = false
+      if poster_url.present?
+        poster_attached = ai_service.download_and_attach_poster(movie, poster_url)
+
+        if poster_attached
+          movie.reload
+          Rails.logger.info("Poster anexado com sucesso para o filme '#{movie.title}'")
+        else
+          Rails.logger.error("Falha ao anexar poster para o filme '#{movie.title}'")
+        end
+      else
+        Rails.logger.warn("Nenhum poster encontrado para o filme '#{movie.title}'")
+      end
+
+      render json: {
+        success: true,
+        movie_id: movie.id,
+        poster_attached: poster_attached,
+        message: "Filme criado com sucesso#{poster_attached ? ' e pôster anexado' : ''}!"
+      }
     else
-      render json: result
+      render json: { success: false, error: movie.errors.full_messages.join(", ") }
     end
   end
 
