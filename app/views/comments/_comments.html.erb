@@ -1,0 +1,54 @@
+<div class="card mt-3">
+  <div class="card-header">
+    <h5><i class="fas fa-comments"></i> Comentários</h5>
+  </div>
+  <div class="card-body">
+    <!-- Formulário para novo comentário -->
+    <div class="mb-4">
+      <%= form_with(model: [@movie, Comment.new], local: true, html: { class: "row g-3" }) do |form| %>
+        <div class="col-md-6">
+          <%= form.text_field :commenter_name, placeholder: "Seu nome", class: "form-control" %>
+        </div>
+        <div class="col-md-6">
+          <%= form.email_field :email, placeholder: "Seu email (opcional)", class: "form-control" %>
+        </div>
+        <div class="col-12">
+          <%= form.text_area :content, placeholder: "Escreva seu comentário...", rows: 3, class: "form-control" %>
+        </div>
+        <div class="col-auto">
+          <%= form.submit "Comentar", class: "btn btn-primary" %>
+        </div>
+      <% end %>
+    </div>
+
+    <!-- Lista de comentários -->
+    <% if @movie.comments.any? %>
+      <div class="comments-list">
+        <% @movie.comments.order(created_at: :desc).each do |comment| %>
+          <div class="comment-item mb-3 p-3 border rounded">
+            <div class="comment-header mb-2">
+              <strong><%= comment.commenter_display_name %></strong>
+              <small class="text-muted">
+                · <%= time_ago_in_words(comment.created_at) %> atrás
+              </small>
+              <% if user_signed_in? && (comment.user == current_user || @movie.user == current_user) %>
+                <%= button_to movie_comment_path(@movie, comment), method: :delete,
+                    confirm: "Tem certeza?", class: "btn btn-sm btn-outline-danger float-end" do %>
+                  <i class="fas fa-trash"></i>
+                <% end %>
+              <% end %>
+            </div>
+            <div class="comment-content">
+              <%= simple_format(comment.content) %>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    <% else %>
+      <div class="text-center text-muted">
+        <i class="fas fa-comment-slash fa-2x mb-2"></i>
+        <p>Nenhum comentário ainda. Seja o primeiro a comentar!</p>
+      </div>
+    <% end %>
+  </div>
+</div>

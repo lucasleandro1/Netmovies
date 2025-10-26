@@ -1,0 +1,167 @@
+<% content_for :title, @movie.title %>
+
+<div class="row">
+  <div class="col-md-4">
+    <% if @movie.poster.attached? %>
+      <%= image_tag @movie.poster, class: "img-fluid rounded", alt: @movie.title %>
+    <% else %>
+      <div class="bg-light rounded d-flex align-items-center justify-content-center" style="height: 400px;">
+        <i class="fas fa-film fa-5x text-muted"></i>
+      </div>
+    <% end %>
+  </div>
+  
+  <div class="col-md-8">
+    <div class="d-flex justify-content-between align-items-start mb-3">
+      <h1 class="mb-0"><%= @movie.title %></h1>
+
+      <% if user_signed_in? && @movie.user == current_user %>
+        <div class="d-flex gap-2">
+          <%= link_to t('movies.edit'),
+                      edit_movie_path(@movie),
+                      class: "btn btn-sm btn-outline-primary" %>
+
+          <%= button_to t('movies.delete'),
+                        movie_path(@movie),
+                        method: :delete,
+                        form: { data: { turbo_confirm: t('movies.delete_confirmation') } },
+                        class: "btn btn-sm btn-outline-danger" %>
+        </div>
+      <% end %>
+    </div>
+
+
+
+    <div class="mb-3">
+      <span class="badge bg-primary me-2"><%= @movie.year %></span>
+      <span class="badge bg-secondary me-2"><%= @movie.display_duration %></span>
+      <span class="badge bg-info"><%= @movie.director %></span>
+    </div>
+
+    <div class="mb-3">
+      <% @movie.categories.each do |category| %>
+        <%= link_to category.name, category_path(category), class: "badge bg-warning text-dark text-decoration-none me-1" %>
+      <% end %>
+    </div>
+
+    <div class="mb-3">
+      <% @movie.tags.each do |tag| %>
+        <span class="badge bg-light text-dark me-1">#<%= tag.name %></span>
+      <% end %>
+    </div>
+
+    <h3><%= t('movies.synopsis') %></h3>
+    <p class="lead"><%= simple_format(@movie.synopsis) %></p>
+
+    <small class="text-muted">
+      <i class="fas fa-user"></i> <%= t('movies.added_by') %> <%= @movie.user.email.split('@').first %> 
+      <%= t('movies.on') %> <%= l(@movie.created_at, format: :long) %>
+    </small>
+  </div>
+</div>
+
+<hr class="my-5">
+
+<!-- Comments Section -->
+<div class="row">
+  <div class="col-md-8">
+    <h3><i class="fas fa-comments"></i> <%= t('comments.title') %> (<%= @comments.count %>)</h3>
+
+    <!-- Comment Form -->
+    <div class="card mb-4">
+      <div class="card-body">
+        <%= form_with model: [@movie, @comment], local: true do |f| %>
+          <% if @comment.errors.any? %>
+            <div class="alert alert-danger">
+              <ul class="mb-0">
+                <% @comment.errors.full_messages.each do |message| %>
+                  <li><%= message %></li>
+                <% end %>
+              </ul>
+            </div>
+          <% end %>
+
+          <div class="mb-3">
+            <%= f.text_area :content, rows: 3, class: "form-control", 
+                           placeholder: t('comments.content_placeholder') %>
+          </div>
+
+          <% unless user_signed_in? %>
+            <div class="mb-3">
+              <%= f.text_field :commenter_name, class: "form-control", 
+                              placeholder: t('comments.name_placeholder') %>
+            </div>
+          <% end %>
+
+          <div class="d-flex justify-content-between align-items-center">
+            <%= f.submit t('comments.submit'), class: "btn btn-primary" %>
+            <% unless user_signed_in? %>
+              <small class="text-muted">
+                <%= link_to t('comments.login_for_better_experience'), new_user_session_path %>
+              </small>
+            <% end %>
+          </div>
+        <% end %>
+      </div>
+    </div>
+
+    <!-- Comments List -->
+    <% if @comments.any? %>
+      <% @comments.each do |comment| %>
+        <div class="card mb-3">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-start">
+              <div>
+                <h6 class="card-subtitle mb-2 text-muted">
+                  <i class="fas fa-user"></i> <%= comment.commenter_display_name %>
+                  <small>• <%= time_ago_in_words(comment.created_at) %> <%= t('comments.ago') %></small>
+                </h6>
+                <p class="card-text"><%= simple_format(comment.content) %></p>
+              </div>
+              <% if user_signed_in? && (comment.user == current_user || @movie.user == current_user) %>
+                <%= link_to movie_comment_path(@movie, comment), method: :delete,
+                           class: "btn btn-sm btn-outline-danger",
+                           confirm: t('comments.delete_confirmation') do %>
+                  <i class="fas fa-trash"></i>
+                <% end %>
+              <% end %>
+            </div>
+          </div>
+        </div>
+      <% end %>
+    <% else %>
+      <div class="text-center py-4">
+        <i class="fas fa-comments fa-2x text-muted mb-3"></i>
+        <p class="text-muted"><%= t('comments.no_comments') %></p>
+      </div>
+    <% end %>
+  </div>
+
+  <div class="col-md-4">
+    <div class="position-sticky" style="top: 20px;">
+      <%= link_to t('movies.back_to_list'), movies_path, class: "btn btn-outline-secondary w-100 mb-3" %>
+      
+      <div class="card">
+        <div class="card-header">
+          <h6><i class="fas fa-info-circle"></i> <%= t('movies.movie_info') %></h6>
+        </div>
+        <div class="card-body">
+          <p><strong><%= t('movies.year') %>:</strong> <%= @movie.year %></p>
+          <p><strong><%= t('movies.duration') %>:</strong> <%= @movie.display_duration %></p>
+          <p><strong><%= t('movies.director') %>:</strong> <%= @movie.director %></p>
+          <p><strong><%= t('movies.categories') %>:</strong>
+            <% if @movie.categories.any? %>
+              <% @movie.categories.each do |category| %>
+                <%= link_to category.name, category_path(category), class: "badge bg-primary text-decoration-none" %>
+              <% end %>
+            <% else %>
+              <span class="text-muted"><%= t('movies.no_categories') %></span>
+            <% end %>
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+

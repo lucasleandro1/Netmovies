@@ -1,0 +1,256 @@
+<%= form_with model: movie, local: true, multipart: true do |f| %>
+  <% if movie.errors.any? %>
+    <div class="alert alert-danger">
+      <h4><%= t('movies.form_errors') %></h4>
+      <ul class="mb-0">
+        <% movie.errors.full_messages.each do |message| %>
+          <li><%= message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="row">
+    <div class="col-md-8">
+      <div class="mb-3">
+        <%= f.label :title, class: "form-label" %>
+        <%= f.text_field :title, class: "form-control", placeholder: t('movies.title_placeholder') %>
+      </div>
+
+      <div class="mb-3">
+        <%= f.label :synopsis, class: "form-label" %>
+        <%= f.text_area :synopsis, rows: 5, class: "form-control", placeholder: t('movies.synopsis_placeholder') %>
+      </div>
+
+      <div class="row">
+        <div class="col-md-4">
+          <div class="mb-3">
+            <%= f.label :year, class: "form-label" %>
+            <%= f.number_field :year, class: "form-control", 
+                              min: 1900, max: Date.current.year + 5,
+                              placeholder: Date.current.year %>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="mb-3">
+            <%= f.label :duration, t('movies.duration_minutes'), class: "form-label" %>
+            <%= f.number_field :duration, class: "form-control", min: 1, placeholder: "120" %>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="mb-3">
+            <%= f.label :director, class: "form-label" %>
+            <%= f.text_field :director, class: "form-control", placeholder: t('movies.director_placeholder') %>
+          </div>
+        </div>
+      </div>
+
+      <div class="mb-3">
+        <%= f.label :category_ids, t('movies.categories'), class: "form-label" %>
+        <%= f.collection_check_boxes :category_ids, @categories, :id, :name do |b| %>
+          <div class="form-check form-check-inline">
+            <%= b.check_box(class: "form-check-input") %>
+            <%= b.label(class: "form-check-label") %>
+          </div>
+        <% end %>
+        <small class="form-text text-muted"><%= t('movies.select_categories_help') %></small>
+      </div>
+
+      <div class="mb-3">
+        <%= f.label :tag_ids, t('movies.tags'), class: "form-label" %>
+        <%= f.collection_check_boxes :tag_ids, @tags, :id, :name do |b| %>
+          <div class="form-check form-check-inline">
+            <%= b.check_box(class: "form-check-input") %>
+            <%= b.label(class: "form-check-label") %>
+          </div>
+        <% end %>
+        <small class="form-text text-muted"><%= t('movies.select_tags_help') %></small>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="mb-3">
+        <%= f.label :poster, t('movies.poster'), class: "form-label" %>
+        <%= f.file_field :poster, class: "form-control", accept: "image/*" %>
+        <%= f.hidden_field :ai_poster_url, id: "movie_ai_poster_url" %>
+        <small class="form-text text-muted"><%= t('movies.poster_help') %></small>
+      </div>
+
+      <% if movie.poster.attached? %>
+        <div class="mb-3">
+          <p class="mb-2"><strong><%= t('movies.current_poster') %></strong></p>
+          <%= image_tag movie.poster, class: "img-fluid rounded", style: "max-height: 200px;" %>
+        </div>
+      <% end %>
+
+      <!-- AI Integration Section -->
+      <div class="card bg-light">
+        <div class="card-body">
+          <h6 class="card-title"><i class="fas fa-robot"></i> <%= t('movies.ai_helper') %></h6>
+          <p class="card-text small">Use o botão abaixo para preencher os dados do filme.</p>
+          <div class="d-grid gap-2 mb-2">
+            <button type="button" id="fetch-ai-btn" class="btn btn-outline-primary">
+              <i class="fas fa-edit"></i> Preencher com IA
+            </button>
+          </div>
+          <div id="ai-loading" class="d-none">
+            <div class="spinner-border spinner-border-sm" role="status">
+              <span class="visually-hidden">Carregando...</span>
+            </div>
+            <span id="ai-loading-text">Buscando informações...</span>
+          </div>
+          <div id="ai-error" class="alert alert-warning d-none" role="alert"></div>
+          <div id="ai-success" class="alert alert-success d-none" role="alert"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="d-flex justify-content-between align-items-center">
+    <div>
+      <%= f.submit movie.persisted? ? t('movies.update') : t('movies.create'), 
+                  class: "btn btn-primary" %>
+      <%= link_to t('movies.cancel'), movie.persisted? ? movie : movies_path, 
+                 class: "btn btn-secondary" %>
+    </div>
+    <% if movie.persisted? %>
+      <%= link_to t('movies.delete'), movie, method: :delete, 
+                 class: "btn btn-outline-danger", 
+                 confirm: t('movies.delete_confirmation') %>
+    <% end %>
+  </div>
+<% end %>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const fetchBtn = document.getElementById('fetch-ai-btn');
+  const loadingDiv = document.getElementById('ai-loading');
+  const loadingText = document.getElementById('ai-loading-text');
+  const errorDiv = document.getElementById('ai-error');
+  const successDiv = document.getElementById('ai-success');
+  let aiPosterUrl = null;
+  if (fetchBtn) {
+    fetchBtn.addEventListener('click', async function() {
+      await handleAiFetch();
+    });
+  }
+  
+
+  async function handleAiFetch() {
+    const titleField = document.getElementById('movie_title');
+    const title = titleField ? titleField.value.trim() : '';
+    if (!title) {
+      showError('Por favor, preencha o título do filme no formulário.');
+      return;
+    }
+    showLoading('Buscando dados do filme com IA...');
+    try {
+      const response = await fetch('<%= fetch_ai_data_movies_path %>', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-Token': document.querySelector('[name="csrf-token"]').content
+        },
+        body: JSON.stringify({ title: title })
+      });
+      const data = await response.json();
+      hideLoading();
+      if (data.success && data.data) {
+        fillFormData(data.data);
+        showSuccessMessage('Campos preenchidos com IA! Confira e edite se necessário.');
+        if (data.data.poster_url) {
+          aiPosterUrl = data.data.poster_url;
+          showAiPoster(aiPosterUrl);
+        }
+      } else {
+        showError(data.error || 'Erro ao buscar dados da IA');
+      }
+    } catch (err) {
+      hideLoading();
+      showError('Erro de conexão. Tente novamente.');
+    }
+  }
+
+  
+  function fillFormData(movieData) {
+    const titleField = document.getElementById('movie_title');
+    const synopsisField = document.getElementById('movie_synopsis');
+    const yearField = document.getElementById('movie_year');
+    const durationField = document.getElementById('movie_duration');
+    const directorField = document.getElementById('movie_director');
+    
+    if (titleField && movieData.title && !titleField.value) titleField.value = movieData.title;
+    if (synopsisField && movieData.synopsis && !synopsisField.value) synopsisField.value = movieData.synopsis;
+    if (yearField && movieData.year && !yearField.value) yearField.value = movieData.year;
+    if (durationField && movieData.duration && !durationField.value) durationField.value = movieData.duration;
+    if (directorField && movieData.director && !directorField.value) directorField.value = movieData.director;
+    
+    // Fill categories and tags if available
+    // Adapte para checkboxes
+    if (movieData.categories) {
+      movieData.categories.forEach(categoryName => {
+        const checkboxes = document.querySelectorAll('input[name="movie[category_ids][]"]');
+        checkboxes.forEach(box => {
+          if (box.nextElementSibling && box.nextElementSibling.textContent.trim().toLowerCase() === categoryName.toLowerCase()) {
+            box.checked = true;
+          }
+        });
+      });
+    }
+    if (movieData.tags) {
+      movieData.tags.forEach(tagName => {
+        const checkboxes = document.querySelectorAll('input[name="movie[tag_ids][]"]');
+        checkboxes.forEach(box => {
+          if (box.nextElementSibling && box.nextElementSibling.textContent.trim().toLowerCase() === tagName.toLowerCase()) {
+            box.checked = true;
+          }
+        });
+      });
+    }
+  }
+  
+  function showLoading(message = 'Processando...') {
+  loadingText.textContent = message;
+  loadingDiv.classList.remove('d-none');
+  errorDiv.classList.add('d-none');
+  successDiv.classList.add('d-none');
+  fetchBtn.disabled = true;
+  }
+  
+  function hideLoading() {
+  loadingDiv.classList.add('d-none');
+  fetchBtn.disabled = false;
+  }
+  
+  function showError(message) {
+    errorDiv.classList.remove('d-none');
+    errorDiv.textContent = message;
+    successDiv.classList.add('d-none');
+  }
+  
+  function showSuccessMessage(message) {
+    successDiv.classList.remove('d-none');
+    successDiv.innerHTML = `<i class="fas fa-check"></i> ${message}`;
+    errorDiv.classList.add('d-none');
+    
+    setTimeout(() => {
+      successDiv.classList.add('d-none');
+    }, 5000);
+  }
+
+  function showAiPoster(url) {
+    let posterDiv = document.getElementById('ai-poster-preview');
+    if (!posterDiv) {
+      posterDiv = document.createElement('div');
+      posterDiv.id = 'ai-poster-preview';
+      posterDiv.className = 'mb-3';
+      const col = document.querySelector('.col-md-4');
+      if (col) col.appendChild(posterDiv);
+    }
+    posterDiv.innerHTML = `<img src="${url}" class="img-fluid rounded" style="max-height: 200px;" />`;
+    // Preenche o campo hidden do form
+    const aiPosterField = document.getElementById('movie_ai_poster_url');
+    if (aiPosterField) aiPosterField.value = url;
+  }
+});
+</script>

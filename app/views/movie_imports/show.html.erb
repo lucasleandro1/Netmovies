@@ -1,0 +1,119 @@
+<% content_for :title, "#{t('movie_imports.import')} - #{@movie_import.file_name}" %>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h1><i class="fas fa-file-csv"></i> <%= @movie_import.file_name %></h1>
+  <%= link_to t('movie_imports.back'), movie_imports_path, class: "btn btn-outline-secondary" %>
+</div>
+
+<div class="row">
+  <div class="col-md-8">
+    <div class="card">
+      <div class="card-header">
+        <h5><%= t('movie_imports.import_details') %></h5>
+      </div>
+      <div class="card-body">
+        <dl class="row">
+          <dt class="col-sm-3"><%= t('movie_imports.status') %>:</dt>
+          <dd class="col-sm-9">
+            <% case @movie_import.status %>
+            <% when 'pending' %>
+              <span class="badge bg-warning"><%= t('movie_imports.status_pending') %></span>
+              <small class="text-muted ms-2"><%= t('movie_imports.status_pending_description') %></small>
+            <% when 'processing' %>
+              <span class="badge bg-info"><%= t('movie_imports.status_processing') %></span>
+              <small class="text-muted ms-2"><%= t('movie_imports.status_processing_description') %></small>
+            <% when 'completed' %>
+              <span class="badge bg-success"><%= t('movie_imports.status_completed') %></span>
+              <small class="text-muted ms-2"><%= t('movie_imports.status_completed_description') %></small>
+            <% when 'failed' %>
+              <span class="badge bg-danger"><%= t('movie_imports.status_failed') %></span>
+              <small class="text-muted ms-2"><%= t('movie_imports.status_failed_description') %></small>
+            <% end %>
+          </dd>
+
+          <dt class="col-sm-3"><%= t('movie_imports.processed') %>:</dt>
+          <dd class="col-sm-9"><%= @movie_import.processed_count || 0 %> <%= t('movie_imports.movies') %></dd>
+
+          <dt class="col-sm-3"><%= t('movie_imports.errors') %>:</dt>
+          <dd class="col-sm-9"><%= @movie_import.error_count || 0 %> <%= t('movie_imports.errors_count') %></dd>
+
+          <dt class="col-sm-3"><%= t('movie_imports.created_at') %>:</dt>
+          <dd class="col-sm-9"><%= l(@movie_import.created_at, format: :long) %></dd>
+
+          <% if @movie_import.completed? || @movie_import.failed? %>
+            <dt class="col-sm-3"><%= t('movie_imports.finished_at') %>:</dt>
+            <dd class="col-sm-9"><%= l(@movie_import.updated_at, format: :long) %></dd>
+          <% end %>
+        </dl>
+      </div>
+    </div>
+
+    <!-- Progress Section (for demo purposes) -->
+    <% if @movie_import.processing? %>
+      <div class="card mt-3">
+        <div class="card-body">
+          <h6><%= t('movie_imports.progress') %></h6>
+          <div class="progress">
+            <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                 role="progressbar" style="width: 45%" aria-valuenow="45" aria-valuemin="0" aria-valuemax="100">
+              45%
+            </div>
+          </div>
+          <small class="text-muted mt-2 d-block">
+            <%= t('movie_imports.processing_note') %>
+          </small>
+        </div>
+      </div>
+    <% end %>
+  </div>
+
+  <div class="col-md-4">
+    <div class="card">
+      <div class="card-header">
+        <h6><i class="fas fa-chart-bar"></i> <%= t('movie_imports.statistics') %></h6>
+      </div>
+      <div class="card-body">
+        <% if @movie_import.completed? %>
+          <div class="text-center">
+            <h4 class="text-success"><%= @movie_import.processed_count %></h4>
+            <p class="text-muted"><%= t('movie_imports.movies_imported') %></p>
+          </div>
+          
+          <% if @movie_import.error_count > 0 %>
+            <div class="text-center mt-3">
+              <h5 class="text-warning"><%= @movie_import.error_count %></h5>
+              <p class="text-muted"><%= t('movie_imports.errors_found') %></p>
+            </div>
+          <% end %>
+
+          <hr>
+          <div class="d-grid">
+            <%= link_to t('movies.view_all'), movies_path, class: "btn btn-primary" %>
+          </div>
+        <% else %>
+          <p class="text-muted text-center">
+            <i class="fas fa-clock fa-2x mb-2"></i><br>
+            <%= t('movie_imports.wait_for_completion') %>
+          </p>
+        <% end %>
+      </div>
+    </div>
+
+    <!-- Help Card -->
+    <div class="card mt-3">
+      <div class="card-header">
+        <h6><i class="fas fa-question-circle"></i> <%= t('movie_imports.help') %></h6>
+      </div>
+      <div class="card-body">
+        <small>
+          <p><strong><%= t('movie_imports.csv_format') %>:</strong></p>
+          <ul class="small">
+            <li><%= t('movie_imports.csv_help_1') %></li>
+            <li><%= t('movie_imports.csv_help_2') %></li>
+            <li><%= t('movie_imports.csv_help_3') %></li>
+          </ul>
+        </small>
+      </div>
+    </div>
+  </div>
+</div>
