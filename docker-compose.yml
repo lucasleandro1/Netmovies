@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15
+    restart: always
+    environment:
+      POSTGRES_DB: netmovies
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  web:
+    build: .
+    depends_on:
+      - db
+    environment:
+      RAILS_ENV: production
+      DATABASE_URL: postgres://postgres:postgres@db:5432/netmovies
+    ports:
+      - "80:80"
+    volumes:
+      - .:/rails
+    command: ["./bin/thrust", "./bin/rails", "server"]
+
+volumes:
+  db_data:

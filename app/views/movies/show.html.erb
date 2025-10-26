@@ -54,20 +54,17 @@
     <p class="lead"><%= simple_format(@movie.synopsis) %></p>
 
     <small class="text-muted">
-      <i class="fas fa-user"></i> <%= t('movies.added_by') %> <%= @movie.user.email.split('@').first %> 
-      <%= t('movies.on') %> <%= l(@movie.created_at, format: :long) %>
+      <i class="fas fa-user"></i> <%= t('movies.added_by') %> <%= @movie.user.name %> 
+      <%= l(@movie.created_at, format: :long) %>
     </small>
   </div>
 </div>
 
 <hr class="my-5">
 
-<!-- Comments Section -->
 <div class="row">
   <div class="col-md-8">
     <h3><i class="fas fa-comments"></i> <%= t('comments.title') %> (<%= @comments.count %>)</h3>
-
-    <!-- Comment Form -->
     <div class="card mb-4">
       <div class="card-body">
         <%= form_with model: [@movie, @comment], local: true do |f| %>
@@ -105,7 +102,6 @@
       </div>
     </div>
 
-    <!-- Comments List -->
     <% if @comments.any? %>
       <% @comments.each do |comment| %>
         <div class="card mb-3">
@@ -114,12 +110,14 @@
               <div>
                 <h6 class="card-subtitle mb-2 text-muted">
                   <i class="fas fa-user"></i> <%= comment.commenter_display_name %>
-                  <small>• <%= time_ago_in_words(comment.created_at) %> <%= t('comments.ago') %></small>
+                  <% if comment.created_at < 1.minute.ago %>
+                    <small>• <%= time_ago_in_words(comment.created_at) %></small>
+                  <% end %>
                 </h6>
                 <p class="card-text"><%= simple_format(comment.content) %></p>
               </div>
               <% if user_signed_in? && (comment.user == current_user || @movie.user == current_user) %>
-                <%= link_to movie_comment_path(@movie, comment), method: :delete,
+                <%= button_to movie_comment_path(@movie, comment), method: :delete,
                            class: "btn btn-sm btn-outline-danger",
                            confirm: t('comments.delete_confirmation') do %>
                   <i class="fas fa-trash"></i>

@@ -2,26 +2,23 @@ class CommentsController < ApplicationController
   before_action :set_movie
 
   def create
-    @comment = @movie.comments.build(comment_params)
-    @comment.user = current_user if user_signed_in?
-
-    if @comment.save
-      redirect_to @movie, notice: t("comments.created_successfully")
+    result = CommentManager::Creator.call(current_user, @movie, comment_params)
+    if result[:success]
+      redirect_to @movie, notice: result[:message] || t("comments.created_successfully")
     else
       @comments = @movie.comments.includes(:user).ordered_by_newest
+      flash.now[:alert] = result[:error_message]
       render "movies/show", status: :unprocessable_entity
     end
   end
 
   def destroy
     @comment = @movie.comments.find(params[:id])
-
-    # Allow deletion if user is comment owner or movie owner
-    if can_delete_comment?(@comment)
-      @comment.destroy
-      redirect_to @movie, notice: t("comments.deleted_successfully")
+    result = CommentManager::Destroyer.call(current_user, @movie, @comment)
+    if result[:success]
+      redirect_to @movie, notice: result[:message] || t("comments.deleted_successfully")
     else
-      redirect_to @movie, alert: t("comments.not_authorized")
+      redirect_to @movie, alert: result[:error_message] || t("comments.not_authorized")
     end
   end
 

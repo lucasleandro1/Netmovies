@@ -47,25 +47,39 @@
 
       <div class="mb-3">
         <%= f.label :category_ids, t('movies.categories'), class: "form-label" %>
-        <%= f.collection_check_boxes :category_ids, @categories, :id, :name do |b| %>
-          <div class="form-check form-check-inline">
-            <%= b.check_box(class: "form-check-input") %>
-            <%= b.label(class: "form-check-label") %>
-          </div>
-        <% end %>
-        <small class="form-text text-muted"><%= t('movies.select_categories_help') %></small>
+
+        <div class="d-flex flex-wrap gap-2">
+          <%= f.collection_check_boxes :category_ids, @categories, :id, :name do |b| %>
+            <div class="mb-1">
+              <%= b.check_box(class: "btn-check", id: "category_#{b.value}", autocomplete: "off") %>
+              <%= b.label class: "btn btn-outline-primary", for: "category_#{b.value}" %>
+            </div>
+          <% end %>
+        </div>
+
+        <small class="form-text text-muted">
+          <%= t('movies.select_categories_help') %>
+        </small>
       </div>
 
-      <div class="mb-3">
-        <%= f.label :tag_ids, t('movies.tags'), class: "form-label" %>
+
+    <div class="mb-3">
+      <%= f.label :tag_ids, t('movies.tags'), class: "form-label" %>
+
+      <div class="d-flex flex-wrap gap-2">
         <%= f.collection_check_boxes :tag_ids, @tags, :id, :name do |b| %>
-          <div class="form-check form-check-inline">
-            <%= b.check_box(class: "form-check-input") %>
-            <%= b.label(class: "form-check-label") %>
+          <div class="">
+            <%= b.check_box(class: "btn-check", id: "tag_#{b.value}", autocomplete: "off") %>
+            <%= b.label class: "btn btn-outline-primary", for: "tag_#{b.value}" %>
           </div>
         <% end %>
-        <small class="form-text text-muted"><%= t('movies.select_tags_help') %></small>
       </div>
+
+      <small class="form-text text-muted">
+        <%= t('movies.select_tags_help') %>
+      </small>
+    </div>
+
     </div>
 
     <div class="col-md-4">
@@ -83,7 +97,6 @@
         </div>
       <% end %>
 
-      <!-- AI Integration Section -->
       <div class="card bg-light">
         <div class="card-body">
           <h6 class="card-title"><i class="fas fa-robot"></i> <%= t('movies.ai_helper') %></h6>
@@ -122,135 +135,97 @@
 <% end %>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-  const fetchBtn = document.getElementById('fetch-ai-btn');
-  const loadingDiv = document.getElementById('ai-loading');
-  const loadingText = document.getElementById('ai-loading-text');
-  const errorDiv = document.getElementById('ai-error');
-  const successDiv = document.getElementById('ai-success');
-  let aiPosterUrl = null;
-  if (fetchBtn) {
-    fetchBtn.addEventListener('click', async function() {
-      await handleAiFetch();
-    });
-  }
-  
+document.addEventListener('turbo:load', () => {
+  const $ = id => document.getElementById(id);
+  const fetchBtn = $('fetch-ai-btn');
+  if (!fetchBtn) return;
 
-  async function handleAiFetch() {
-    const titleField = document.getElementById('movie_title');
-    const title = titleField ? titleField.value.trim() : '';
-    if (!title) {
-      showError('Por favor, preencha o título do filme no formulário.');
-      return;
+  const loading = $('ai-loading');
+  const loadingText = $('ai-loading-text');
+  const errorDiv = $('ai-error');
+  const successDiv = $('ai-success');
+  const aiPosterField = $('movie_ai_poster_url');
+
+  const toggle = (el, show = true) => el.classList.toggle('d-none', !show);
+
+  const showMessage = (el, msg, success = false) => {
+    el.innerHTML = success ? `<i class="fas fa-check"></i> ${msg}` : msg;
+    toggle(el, true);
+    toggle(success ? errorDiv : successDiv, false);
+    if (success) setTimeout(() => toggle(el, false), 4000);
+  };
+
+  const setLoading = msg => {
+    loadingText.textContent = msg || 'Processando...';
+    toggle(loading, true);
+    fetchBtn.disabled = true;
+  };
+
+  const stopLoading = () => {
+    toggle(loading, false);
+    fetchBtn.disabled = false;
+  };
+
+  const fillForm = data => {
+    const fields = ['title', 'synopsis', 'year', 'duration', 'director'];
+    fields.forEach(f => {
+      const el = $(`movie_${f}`);
+      if (el && data[f] && !el.value) el.value = data[f];
+    });
+
+    const checkValues = (selector, values) => {
+      document.querySelectorAll(selector).forEach(box => {
+        if (values?.some(v => box.nextElementSibling?.textContent.trim().toLowerCase() === v.toLowerCase())) {
+          box.checked = true;
+        }
+      });
+    };
+
+    checkValues('input[name="movie[category_ids][]"]', data.categories);
+    checkValues('input[name="movie[tag_ids][]"]', data.tags);
+  };
+
+  const showPoster = url => {
+    let div = $('ai-poster-preview');
+    if (!div) {
+      div = document.createElement('div');
+      div.id = 'ai-poster-preview';
+      div.className = 'mb-3';
+      document.querySelector('.col-md-4')?.appendChild(div);
     }
-    showLoading('Buscando dados do filme com IA...');
+    div.innerHTML = `<img src="${url}" class="img-fluid rounded" style="max-height: 200px;" />`;
+    if (aiPosterField) aiPosterField.value = url;
+  };
+
+  fetchBtn.addEventListener('click', async () => {
+    const title = $('movie_title')?.value.trim();
+    if (!title) return showMessage(errorDiv, 'Por favor, preencha o título do filme.');
+
+    setLoading('Buscando dados do filme com IA...');
     try {
-      const response = await fetch('<%= fetch_ai_data_movies_path %>', {
+      const res = await fetch('<%= fetch_ai_data_movies_path %>', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'X-CSRF-Token': document.querySelector('[name="csrf-token"]').content
         },
-        body: JSON.stringify({ title: title })
+        body: JSON.stringify({ title })
       });
-      const data = await response.json();
-      hideLoading();
+
+      const data = await res.json();
+      stopLoading();
+
       if (data.success && data.data) {
-        fillFormData(data.data);
-        showSuccessMessage('Campos preenchidos com IA! Confira e edite se necessário.');
-        if (data.data.poster_url) {
-          aiPosterUrl = data.data.poster_url;
-          showAiPoster(aiPosterUrl);
-        }
+        fillForm(data.data);
+        showMessage(successDiv, 'Campos preenchidos com IA! Confira e edite se necessário.', true);
+        if (data.data.poster_url) showPoster(data.data.poster_url);
       } else {
-        showError(data.error || 'Erro ao buscar dados da IA');
+        showMessage(errorDiv, data.error || 'Erro ao buscar dados da IA.');
       }
-    } catch (err) {
-      hideLoading();
-      showError('Erro de conexão. Tente novamente.');
+    } catch {
+      stopLoading();
+      showMessage(errorDiv, 'Erro de conexão. Tente novamente.');
     }
-  }
-
-  
-  function fillFormData(movieData) {
-    const titleField = document.getElementById('movie_title');
-    const synopsisField = document.getElementById('movie_synopsis');
-    const yearField = document.getElementById('movie_year');
-    const durationField = document.getElementById('movie_duration');
-    const directorField = document.getElementById('movie_director');
-    
-    if (titleField && movieData.title && !titleField.value) titleField.value = movieData.title;
-    if (synopsisField && movieData.synopsis && !synopsisField.value) synopsisField.value = movieData.synopsis;
-    if (yearField && movieData.year && !yearField.value) yearField.value = movieData.year;
-    if (durationField && movieData.duration && !durationField.value) durationField.value = movieData.duration;
-    if (directorField && movieData.director && !directorField.value) directorField.value = movieData.director;
-    
-    // Fill categories and tags if available
-    // Adapte para checkboxes
-    if (movieData.categories) {
-      movieData.categories.forEach(categoryName => {
-        const checkboxes = document.querySelectorAll('input[name="movie[category_ids][]"]');
-        checkboxes.forEach(box => {
-          if (box.nextElementSibling && box.nextElementSibling.textContent.trim().toLowerCase() === categoryName.toLowerCase()) {
-            box.checked = true;
-          }
-        });
-      });
-    }
-    if (movieData.tags) {
-      movieData.tags.forEach(tagName => {
-        const checkboxes = document.querySelectorAll('input[name="movie[tag_ids][]"]');
-        checkboxes.forEach(box => {
-          if (box.nextElementSibling && box.nextElementSibling.textContent.trim().toLowerCase() === tagName.toLowerCase()) {
-            box.checked = true;
-          }
-        });
-      });
-    }
-  }
-  
-  function showLoading(message = 'Processando...') {
-  loadingText.textContent = message;
-  loadingDiv.classList.remove('d-none');
-  errorDiv.classList.add('d-none');
-  successDiv.classList.add('d-none');
-  fetchBtn.disabled = true;
-  }
-  
-  function hideLoading() {
-  loadingDiv.classList.add('d-none');
-  fetchBtn.disabled = false;
-  }
-  
-  function showError(message) {
-    errorDiv.classList.remove('d-none');
-    errorDiv.textContent = message;
-    successDiv.classList.add('d-none');
-  }
-  
-  function showSuccessMessage(message) {
-    successDiv.classList.remove('d-none');
-    successDiv.innerHTML = `<i class="fas fa-check"></i> ${message}`;
-    errorDiv.classList.add('d-none');
-    
-    setTimeout(() => {
-      successDiv.classList.add('d-none');
-    }, 5000);
-  }
-
-  function showAiPoster(url) {
-    let posterDiv = document.getElementById('ai-poster-preview');
-    if (!posterDiv) {
-      posterDiv = document.createElement('div');
-      posterDiv.id = 'ai-poster-preview';
-      posterDiv.className = 'mb-3';
-      const col = document.querySelector('.col-md-4');
-      if (col) col.appendChild(posterDiv);
-    }
-    posterDiv.innerHTML = `<img src="${url}" class="img-fluid rounded" style="max-height: 200px;" />`;
-    // Preenche o campo hidden do form
-    const aiPosterField = document.getElementById('movie_ai_poster_url');
-    if (aiPosterField) aiPosterField.value = url;
-  }
+  });
 });
 </script>

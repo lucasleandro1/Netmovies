@@ -16,6 +16,10 @@ class Comment < ApplicationRecord
   end
 
   def commenter_display_name
-    anonymous? ? commenter_name : user.email.split("@").first
+    if anonymous?
+      commenter_name
+    else
+      user.name.present? ? user.name : user.email.split("@").first
+    end
   end
 end

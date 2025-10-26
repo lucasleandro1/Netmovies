@@ -1,0 +1,138 @@
+en:
+  nav:
+    movies: "Movies"
+    categories: "Categories"
+    new_movie: "New Movie"
+    login: "Login"
+    register: "Register"
+    logout: "Logout"
+    profile: "Profile"
+  
+  movies:
+    title: "Movie Catalog"
+    new: "New Movie"
+    edit: "Edit Movie"
+    view: "View Movie"
+    create: "Create Movie"
+    update: "Update Movie"
+    delete: "Delete Movie"
+    cancel: "Cancel"
+    search: "Search"
+    search_placeholder: "Search by title or director..."
+    all_categories: "All categories"
+    year: "Year"
+    duration: "Duration"
+    duration_minutes: "Duration (minutes)"
+    director: "Director"
+    synopsis: "Synopsis"
+    poster: "Poster"
+    categories: "Categories"
+    tags: "Tags"
+    movie_info: "Movie Information"
+    statistics: "Statistics"
+    total_movies: "Total movies"
+    total_categories: "Total categories"
+    total_comments: "Total comments"
+    no_movies_found: "No movies found"
+    no_movies_in_category: "No movies in this category"
+    no_movies_in_category_description: "This category doesn't have any movies yet."
+    browse_all: "Browse all movies"
+    be_first_to_add: "Be the first to add a movie!"
+    login_to_add: "Login to add movies"
+    added_by: "Added by"
+    on: "on"
+    view_details: "View details"
+    back_to_list: "Back to list"
+    no_categories: "No categories"
+    title_placeholder: "e.g. The Matrix"
+    synopsis_placeholder: "Describe the movie plot..."
+    director_placeholder: "e.g. Lana Wachowski"
+    select_categories_help: "Select one or more categories"
+    select_tags_help: "Select relevant tags"
+    poster_help: "Upload a JPG, PNG or GIF image"
+    current_poster: "Current poster"
+    ai_helper: "AI Assistant"
+    ai_helper_description: "Use AI to automatically fill movie data"
+    fetch_from_ai: "Fetch data"
+    ai_coming_soon: "Coming soon"
+    form_errors: "Please fix the errors below:"
+    created_successfully: "Movie created successfully!"
+    updated_successfully: "Movie updated successfully!"
+    deleted_successfully: "Movie deleted successfully!"
+    delete_confirmation: "Are you sure? This action cannot be undone."
+    not_authorized: "You are not authorized to perform this action."
+  
+  categories:
+    title: "Categories"
+    category: "Category"
+    view_movies: "View movies"
+    back: "Back"
+    movies_count:
+      zero: "No movies"
+      one: "1 movie"
+      other: "%{count} movies"
+    movies_in_category:
+      zero: "No movies in this category"
+      one: "1 movie in this category"
+      other: "%{count} movies in this category"
+    no_categories: "No categories found"
+    no_categories_description: "Categories will appear here as movies are added."
+  
+  comments:
+    title: "Comments"
+    submit: "Comment"
+    content_placeholder: "Write your comment..."
+    name_placeholder: "Your name"
+    login_for_better_experience: "Login for a better experience"
+    no_comments: "No comments yet. Be the first to comment!"
+    ago: "ago"
+    created_successfully: "Comment added successfully!"
+    deleted_successfully: "Comment removed successfully!"
+    delete_confirmation: "Are you sure you want to remove this comment?"
+    not_authorized: "You are not authorized to remove this comment."
+  
+  footer:
+    all_rights_reserved: "All rights reserved."
+  
+  time:
+    formats:
+      default: "%m/%d/%Y"
+      short: "%B %d"
+      long: "%B %d, %Y at %I:%M %p"
+  
+  date:
+    formats:
+      default: "%m/%d/%Y"
+      short: "%B %d"
+      long: "%B %d, %Y"
+      
+  activerecord:
+    models:
+      movie: "Movie"
+      category: "Category"
+      tag: "Tag"
+      comment: "Comment"
+      user: "User"
+    attributes:
+      movie:
+        title: "Title"
+        synopsis: "Synopsis"
+        year: "Year"
+        duration: "Duration"
+        director: "Director"
+        poster: "Poster"
+        categories: "Categories"
+        tags: "Tags"
+      comment:
+        content: "Content"
+        commenter_name: "Name"
+      category:
+        name: "Name"
+      tag:
+        name: "Name"
+
+  profile:
+    completion_notice: "To get started, please enter your name for a better experience!"
+    complete_profile: "Complete profile"
+
+  hello: "Hello world"

@@ -15,7 +15,7 @@ class Movie < ApplicationRecord
                      less_than_or_equal_to: Date.current.year + 5
                    }
   validates :duration, presence: true, numericality: { greater_than: 0 }
-  validates :director, presence: true
+  validates :director, presence: true, length: { minimum: 2, maximum: 255 }
 
   # Scopes
   scope :ordered_by_newest, -> { order(created_at: :desc) }

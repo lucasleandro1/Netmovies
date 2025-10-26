@@ -8,7 +8,6 @@
     <% end %>
   </div>
 
-  <!-- Search and Filters -->
   <div class="card mb-4">
     <div class="card-body">
       <%= form_with url: search_movies_path, method: :get, local: true, class: "row g-3" do |f| %>
@@ -33,7 +32,6 @@
     </div>
   </div>
 
-  <!-- Movies Grid -->
   <% if @movies.any? %>
     <div class="row">
       <% @movies.each do |movie| %>
@@ -43,7 +41,6 @@
       <% end %>
     </div>
 
-    <!-- Pagination -->
     <div class="d-flex justify-content-center">
       <%= paginate @movies %>
     </div>

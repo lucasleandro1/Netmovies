@@ -65,8 +65,7 @@ RUN groupadd --system --gid 1000 rails && \
 USER 1000:1000
 
 # Entrypoint prepares the database.
-ENTRYPOINT ["/rails/bin/docker-entrypoint"]
+ENTRYPOINT ["/bin/bash", "-c", "./bin/thrust ./bin/rails db:create db:migrate db:seed && ./bin/thrust ./bin/rails server"]
 
-# Start server via Thruster by default, this can be overwritten at runtime
+# Expor porta 80
 EXPOSE 80
-CMD ["./bin/thrust", "./bin/rails", "server"]

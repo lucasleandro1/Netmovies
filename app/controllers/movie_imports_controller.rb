@@ -11,17 +11,13 @@ class MovieImportsController < ApplicationController
   end
 
   def create
-    @movie_import = current_user.movie_imports.build(status: "pending", error_count: 0, processed_count: 0)
-
-    @movie_import.csv_file.attach(
-      io: params[:movie_import][:csv_file],
-      filename: params[:movie_import][:file_name]
-    )
-
-    if @movie_import.save
-      MovieImportJob.perform_later(@movie_import.id)
-      redirect_to @movie_import, notice: t("movie_imports.upload_successful")
+    result = MovieImportManager::Creator.call(current_user, params[:movie_import])
+    if result[:success]
+      MovieImportJob.perform_later(result[:resource].id)
+      redirect_to result[:resource], notice: result[:message] || t("movie_imports.upload_successful")
     else
+      @movie_import = current_user.movie_imports.build
+      flash.now[:alert] = result[:error_message]
       render :new, status: :unprocessable_entity
     end
   end
