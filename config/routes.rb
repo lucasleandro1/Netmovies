@@ -1,5 +1,24 @@
 Rails.application.routes.draw do
-  # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
+  devise_for :users
+
+  # Root route
+  root "movies#index"
+
+  # Movies routes with nested comments
+  resources :movies do
+    resources :comments, only: [ :create, :destroy ]
+    collection do
+      get :search
+      post :fetch_ai_data
+      post :create_from_ai
+    end
+  end
+
+  # Categories routes
+  resources :categories, only: [ :index, :show ]
+
+  # Movie imports routes (for CSV upload)
+  resources :movie_imports, only: [ :index, :new, :create, :show ]
 
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.
   # Can be used by load balancers and uptime monitors to verify that the app is live.
