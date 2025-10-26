@@ -11,12 +11,15 @@ class MovieImportsController < ApplicationController
   end
 
   def create
-    @movie_import = current_user.movie_imports.build(movie_import_params)
-    @movie_import.status = "pending"
+    @movie_import = current_user.movie_imports.build(status: "pending", error_count: 0, processed_count: 0)
+
+    @movie_import.csv_file.attach(
+      io: params[:movie_import][:csv_file],
+      filename: params[:movie_import][:file_name]
+    )
 
     if @movie_import.save
-      # Trigger Sidekiq job for async processing
-      MovieImportJob.perform_async(@movie_import.id)
+      MovieImportJob.perform_later(@movie_import.id)
       redirect_to @movie_import, notice: t("movie_imports.upload_successful")
     else
       render :new, status: :unprocessable_entity
@@ -24,7 +27,6 @@ class MovieImportsController < ApplicationController
   end
 
   def show
-    # Show import status and details
   end
 
   private
@@ -33,7 +35,7 @@ class MovieImportsController < ApplicationController
     @movie_import = current_user.movie_imports.find(params[:id])
   end
 
-  def movie_import_params
+  def movie_import_file_params
     params.require(:movie_import).permit(:file_name, :csv_file)
   end
 end
