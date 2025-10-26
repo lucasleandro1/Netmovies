@@ -7,8 +7,8 @@ class MovieAiService
   GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:generateContent"
 
   def initialize
-    @api_key = "AIzaSyAwkv0fhB9LCo1GyzVngQE2rJumIxxDNjE" #
-    @tmdb_api_key = "e7a045b11f740d5c9fde1d599c4a660e"
+    @api_key = ENV.fetch("GEMINI_API_KEY", nil)
+    @tmdb_api_key = ENV.fetch("TMDB_API_KEY", nil)
   end
 
   def fetch_movie_data(title)
