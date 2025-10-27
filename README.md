@@ -141,10 +141,10 @@ A integração com IA oferece duas funcionalidades principais:
 3. **Primeiro uso:**
   - Execute as migrações e seeds dentro do container web:
     ```bash
-    docker compose exec web rails db:create db:migrate db:seed
+    docker compose exec web bundle exec rails db:create db:migrate db:seed
     ```
 4. **Testes**
   - Execute:
     ```bash
-    docker compose exec web rspec spec
+    docker compose exec web bundle exec rspec spec
     ```
