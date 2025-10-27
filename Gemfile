@@ -61,7 +61,7 @@ group :development, :test do
 
   # Omakase Ruby styling [https://github.com/rails/rubocop-rails-omakase/]
   gem "rubocop-rails-omakase", require: false
-  gem "dotenv-rails", "3.1.8"
+  gem "dotenv-rails"
 
   # RSpec for testing
   gem "rspec-rails"
