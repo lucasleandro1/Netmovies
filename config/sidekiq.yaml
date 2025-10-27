@@ -2,3 +2,6 @@
 :queues:
   - default
   - mailers
+:redis:
+  url: ENV['REDIS_URL'] || 'redis://localhost:6379/0'
+  network_timeout: 5
