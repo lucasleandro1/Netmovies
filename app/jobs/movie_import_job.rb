@@ -1,10 +1,10 @@
 require "csv"
+require "sidekiq/job"
 
-class MovieImportJob < ApplicationJob
-  queue_as :default
+class MovieImportJob
+  include Sidekiq::Job
 
   def perform(movie_import_id)
-    binding.pry
     movie_import = MovieImport.find(movie_import_id)
 
     begin
