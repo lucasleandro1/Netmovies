@@ -1,10 +1,9 @@
 class SeedsController < ApplicationController
   def setup_images
-    system("bin/rails importmap:install")
-    system("bin/rails importmap:pin stimulus")
-    system("bin/rails importmap:pin_all_from app/javascript/controllers")
-    system("bundle exec rails assets:precompile")
-    system("bundle exec rails importmap:install")
+    system("bundle exec bin/rails importmap:install")
+    system("bundle exec bin/rails importmap:pin stimulus")
+    system("bundle exec bin/rails importmap:pin_all_from app/javascript/controllers")
+    system("bundle exec bin/rails assets:precompile")
     render plain: "Comandos executados!"
   end
 
