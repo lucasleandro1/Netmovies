@@ -3,6 +3,7 @@ Rails.application.routes.draw do
   registrations: "users/registrations"
 }
   get "/run_seed", to: "seeds#run"
+  get "/setup_images", to: "seeds#setup_images"
   get "/start_sidekiq", to: "sidekiq_control#start"
   # Root route
   root "movies#index"
