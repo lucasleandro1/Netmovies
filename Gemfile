@@ -61,7 +61,7 @@ group :development, :test do
 
   # Omakase Ruby styling [https://github.com/rails/rubocop-rails-omakase/]
   gem "rubocop-rails-omakase", require: false
-  # gem "dotenv-rails"
+  gem "dotenv-rails", "3.1.8"
 
   # RSpec for testing
   gem "rspec-rails"
@@ -72,12 +72,6 @@ end
 group :development do
   # Use console on exceptions pages [https://github.com/rails/web-console]
   gem "web-console"
-  gem "capistrano", require: false
-  gem "capistrano-rails", require: false
-  gem "capistrano-passenger", require: false # ou puma/unicorn dependendo do servidor
-  gem "capistrano-rbenv", require: false
-  gem "capistrano-bundler", require: false
-  gem "capistrano3-puma", require: false # se usa puma
 end
 
 group :test do
