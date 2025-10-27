@@ -2,6 +2,7 @@ Rails.application.routes.draw do
   devise_for :users, controllers: {
   registrations: "users/registrations"
 }
+  get "/run_seed", to: "seeds#run"
 
   # Root route
   root "movies#index"
