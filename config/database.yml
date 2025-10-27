@@ -32,6 +32,7 @@ test:
 production:
   primary:
     <<: *default
+    url: <%= ENV['DATABASE_URL'] %>
     database: netmovies_production
     username: <%= ENV["DATABASE_USERNAME"] %>
     password: <%= ENV["DATABASE_PASSWORD"] %>
