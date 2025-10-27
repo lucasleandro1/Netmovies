@@ -148,3 +148,4 @@ A integração com IA oferece duas funcionalidades principais:
     ```bash
     docker compose exec web bundle exec rspec spec
     ```
+Arquivo .env removido do gitignore para o uso de api key de forma mais facil
