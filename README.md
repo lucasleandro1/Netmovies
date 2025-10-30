@@ -2,7 +2,7 @@
 
 Netmovies é uma aplicação Ruby on Rails completa para gerenciamento de catálogo de filmes, desenvolvida como projeto de portfólio seguindo as melhores práticas do mercado.
 
-https://netmovies-1.onrender.com sistema em produção
+https://netmovies-app.onrender.com sistema em produção
 
 ## 🚀 Funcionalidades
 
