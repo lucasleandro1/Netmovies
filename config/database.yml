@@ -35,7 +35,7 @@ production:
     database: netmovies_production
     username: postgres
     password: postgres
-    port: 5434
+    port: 5432
   cache:
     <<: *default
     database: storage/production_cache.sqlite3
