@@ -4,7 +4,6 @@ class MovieImport < ApplicationRecord
   has_one_attached :csv_file
 
   # Validations
-  # validates :file_name, presence: true
   validates :status, presence: true, inclusion: { in: %w[pending processing completed failed] }
   validates :processed_count, numericality: { greater_than_or_equal_to: 0 }
   validates :error_count, numericality: { greater_than_or_equal_to: 0 }

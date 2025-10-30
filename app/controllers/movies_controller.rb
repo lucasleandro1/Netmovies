@@ -39,7 +39,8 @@ class MoviesController < ApplicationController
   end
 
   def update
-    result = MovieManager::Updater.call(current_user, @movie, movie_params)
+  ai_poster_url = params[:movie][:ai_poster_url]
+  result = MovieManager::Updater.call(current_user, @movie, movie_params.merge(ai_poster_url: ai_poster_url))
     if result[:success]
       redirect_to @movie, notice: result[:message] || t("movies.updated_successfully")
     else
@@ -89,8 +90,8 @@ class MoviesController < ApplicationController
   end
 
   def movie_params
-    params.require(:movie).permit(:title, :synopsis, :year, :duration, :director, :poster,
-                                  category_ids: [], tag_ids: [])
+  params.require(:movie).permit(:title, :synopsis, :year, :duration, :director, :poster,
+                  category_ids: [], tag_ids: [])
   end
 
   # Filtros extraídos para MovieManager::Filterer

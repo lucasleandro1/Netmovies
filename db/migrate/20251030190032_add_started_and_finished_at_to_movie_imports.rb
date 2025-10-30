@@ -1,0 +1,6 @@
+class AddStartedAndFinishedAtToMovieImports < ActiveRecord::Migration[8.0]
+  def change
+    add_column :movie_imports, :started_at, :datetime
+    add_column :movie_imports, :finished_at, :datetime
+  end
+end

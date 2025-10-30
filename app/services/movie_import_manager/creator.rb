@@ -12,11 +12,15 @@ module MovieImportManager
     end
 
     def call
-      movie_import = @user.movie_imports.build(status: "pending", error_count: 0, processed_count: 0)
-      movie_import.csv_file.attach(
-        io: @import_params[:csv_file],
-        filename: @import_params[:file_name]
+      movie_import = @user.movie_imports.build(
+        status: "pending",
+        error_count: 0,
+        processed_count: 0,
+        file_name: @import_params[:file_name].presence || "Importação #{Time.current.to_i}"
       )
+
+      movie_import.csv_file.attach(@import_params[:csv_file])
+
       if movie_import.save
         response(movie_import)
       else

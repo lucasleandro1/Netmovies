@@ -11,7 +11,8 @@ class MovieImportsController < ApplicationController
   end
 
   def create
-    result = MovieImportManager::Creator.call(current_user, params[:movie_import])
+    result = MovieImportManager::Creator.call(current_user, movie_import_file_params)
+
     if result[:success]
       MovieImportJob.perform_async(result[:resource].id)
       redirect_to result[:resource], notice: result[:message] || t("movie_imports.upload_successful")
